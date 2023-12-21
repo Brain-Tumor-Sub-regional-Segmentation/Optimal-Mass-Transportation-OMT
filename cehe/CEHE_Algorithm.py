@@ -82,9 +82,9 @@ get_density_map = lambda enhanced_image, gamma: np.exp(gamma * normalize_img_arr
 
 """
 
-mri_image = nib.load("/content/BraTS2021_00000_flair.nii.gz")
-image_arr = mri_image.get_fdata()
-enhanced_image_arr = CEHE(image_arr, neighbourhood_voting_fn, 3, 65536)
-enhanced_image = nib.Nifti1Image(enhanced_image_arr, affine=np.eye(4))
+# mri_image = nib.load("/content/BraTS2021_00000_flair.nii.gz")
+# image_arr = mri_image.get_fdata()
+# enhanced_image_arr = CEHE(image_arr, neighbourhood_voting_fn, 3, 65536)
+# enhanced_image = nib.Nifti1Image(enhanced_image_arr, affine=np.eye(4))
 
-density_map = get_density_map(enhanced_image, 1)
+# density_map = get_density_map(enhanced_image, 1)
