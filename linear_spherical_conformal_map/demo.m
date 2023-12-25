@@ -24,8 +24,15 @@
 %% Example 1: David
 
 % Read the .off file
-    %fid = fopen('outtttt.off', 'r');
-    fid = fopen('flair2.off', 'r');
+    % Check the number of input arguments
+    if nargin != 1
+      error("Usage: demo.m input_file_path");
+    endif
+    
+    % Get the input mesh file name from command-line arguments
+    input_file_path = argv(){1};
+    
+    fid = fopen(input_file_path, 'r');
     % Read the header
     header = fscanf(fid, '%s', 1);
     if ~strcmp(header, 'OFF')
@@ -33,15 +40,15 @@
     end
     
     % Read the number of vertices, faces, and edges
-    numVertices = fscanf(fid, '%d', 1);
-    numFaces = fscanf(fid, '%d', 1);
-    numEdges = fscanf(fid, '%d', 1);
+    num_vertices = fscanf(fid, '%d', 1);
+    num_faces = fscanf(fid, '%d', 1);
+    num_edges = fscanf(fid, '%d', 1);
     
     % Read the vertex coordinates
-    vertices = fscanf(fid, '%f', [3, numVertices])';
+    vertices = fscanf(fid, '%f', [3, num_vertices])';
     
     % Read the face indices for triangles
-    faces = fscanf(fid, '%*d %d %d %d', [3, numFaces])';
+    faces = fscanf(fid, '%*d %d %d %d', [3, num_faces])';
     
     % Close the file
     fclose(fid);
@@ -55,41 +62,29 @@ f=double(faces);
 disp(class(v));
 disp(class(f));
 f=f+1;
-plot_mesh(v,f); view([-130 0])
+% plot_mesh(v,f); view([-130 0])
 
 map = spherical_conformal_map(v,f);
 
-plot_mesh(map,f); 
+% Specify the output file name
+output_file_name = 'spherical_conformal_map_output.txt';
 
-% evaluate the angle distortion
-angle_distortion(v,f,map);
+% Open the output file for writing
+fid = fopen(output_file_name, 'w');
 
-%% Example 2: Chinese lion
-load('lion.mat')
-% plot_mesh(v,f);
-% can also include the third input if an additional quantity is defined on vertices
-plot_mesh(v,f,mean_curv);
+% Check if the file is opened successfully
+if fid == -1
+    error('Error opening the output file.');
+end
 
-map = spherical_conformal_map(v,f);
+fprintf(fid, '%d\n', size(map, 1));
 
-% plot_mesh(map,f); view([-70 0])
-% can also include the third input if an additional quantity is defined on vertices
-plot_mesh(map,f,mean_curv); view([-70 0])
+% Write each vertex coordinate to the file
+for i = 1:size(map, 1)
+    fprintf(fid, '%f %f %f\n', map(i, 1), map(i, 2), map(i, 3));
+end
 
-% evaluate the angle distortion
-angle_distortion(v,f,map);
+% Close the output file
+fclose(fid);
 
-%% Example 3: Brain
-load('brain.mat')
-% plot_mesh(v,f); view([90 0])
-% can also include the third input if an additional quantity is defined on vertices
-plot_mesh(v,f,mean_curv); view([90 0]); 
-
-map = spherical_conformal_map(v,f);
-
-% plot_mesh(map,f); view([-30 0]);
-% can also include the third input if an additional quantity is defined on vertices
-plot_mesh(map,f,mean_curv); view([-30 0]);
-
-% evaluate the angle distortion
-angle_distortion(v,f,map);
+disp(['Spherical conformal map written to ' output_file_name]);
