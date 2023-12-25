@@ -25,6 +25,7 @@
 
 % Read the .off file
     % Check the number of input arguments
+    printf('Num of args %d\n', nargin)
     if nargin != 1
       error("Usage: demo.m input_file_path");
     endif
@@ -32,6 +33,7 @@
     % Get the input mesh file name from command-line arguments
     input_file_path = argv(){1};
     
+    printf('%s\n', input_file_path)
     fid = fopen(input_file_path, 'r');
     % Read the header
     header = fscanf(fid, '%s', 1);
@@ -54,9 +56,9 @@
     fclose(fid);
 
     % Save data to a MAT-file
-    save('outBrain.mat', 'vertices', 'faces');
-%load('outBrain.mat')
-addpath('mfile')
+    save('linear_spherical_conformal_map/outBrain.mat', 'vertices', 'faces');
+%load('linear_spherical_conformal_map/outBrain.mat')
+addpath('linear_spherical_conformal_map/mfile')
 v=double(vertices);
 f=double(faces);
 disp(class(v));
@@ -67,7 +69,7 @@ f=f+1;
 map = spherical_conformal_map(v,f);
 
 % Specify the output file name
-output_file_name = 'spherical_conformal_map_output.txt';
+output_file_name = 'linear_spherical_conformal_map/spherical_conformal_map_output.txt';
 
 % Open the output file for writing
 fid = fopen(output_file_name, 'w');
