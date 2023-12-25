@@ -7,6 +7,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
@@ -17,12 +20,13 @@ jobs:
         python -m pip install --upgrade pip
         pip install flake8
 
-    - name: Lint Python files
-      run: flake8
+    - name: Get branch name
+      id: branch_name
+      run: echo "::set-output name=branch::$(git rev-parse --abbrev-ref HEAD)"
 
     - name: Check branch name
       run: |
-        branch_name=$(git rev-parse --abbrev-ref HEAD)
+        branch_name=${{ steps.branch_name.outputs.branch }}
         if [[ "$branch_name" =~ [^a-zA-Z0-9-] ]]; then
           echo "Branch names must only contain alphanumeric characters and hyphens."
           exit 1
