@@ -1,0 +1,46 @@
+[flake8]
+ignore = E501  # Ignore line length warnings if needed
+max-line-length = 88
+exclude = .git,__pycache__,.venv,venv
+
+# Naming conventions
+application-import-names = your_package_name
+import-order-style = google
+max-complexity = 10
+per-file-ignores =
+    __init__.py: F401
+
+# Naming convention checks
+accept-encodings = utf-8
+case-sensitive = true
+docstring-convention = google
+max-annotations-complexity = 4
+max-function-args = 10
+max-local-variables = 10
+max-module-members = 10
+max-methods = 10
+max-line-complexity = 15
+max-line-annotations = 2
+max-position-annotations = 2
+max-position-args = 5
+max-position-kwargs = 5
+max-returns = 2
+max-expressions = 5
+radon-max-cc = 10
+
+# Naming convention checks
+# Change the error codes and messages accordingly
+extend-ignore =
+    # Naming convention
+    N802, N803, N806, N812, N815, N816,
+    # Import order
+    I100, I101, I201, I202, I203, I204, I205
+
+[flake8_nb]
+max-line-length = 88
+ignore = W291, E303, W293, E701, W292, E402, E731
+exclude = .git,__pycache__,.venv,venv
+
+# Custom check for folder names
+application-import-names = your_package_name
+directory-name-matching = snake_case
