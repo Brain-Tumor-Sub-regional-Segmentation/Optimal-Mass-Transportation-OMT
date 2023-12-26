@@ -11,63 +11,66 @@ Original file is located at
 
 import numpy as np
 import nibabel as nib
+import pandas as pd
+from numpy.lib.stride_tricks import sliding_window_view
 
 """## Some Neighborhood Metrics Implementation"""
 
-range_fn = lambda i, length, offset: (max(0, i - offset), min(length, i + offset + 1))
+average_fn = lambda window, nb_sz : np.sum(window - window[nb_sz // 2, nb_sz // 2, nb_sz // 2], axis=(1, 2, 3)) / (nb_sz ** 3 - 1)
 
-def ranges(point, neighborhood_size, shape):
-  l, w, c = shape
-  offset = neighborhood_size // 2
-  min_x, max_x = range_fn(point[0], l, offset)
-  min_y, max_y = range_fn(point[1], w, offset)
-  min_z, max_z = range_fn(point[2], c, offset)
-  return min_x, max_x, min_y, max_y, min_z, max_z
+inverted_average_fn = lambda window, nb_sz: window[nb_sz // 2, nb_sz // 2, nb_sz // 2] - average_fn(window, nb_sz)
 
-
-def average_fn(point, image, neighborhood_size):
-  min_x, max_x, min_y, max_y, min_z, max_z = ranges(point, neighborhood_size, image.shape)
-  return (np.sum(image[min_x: max_x, min_y: max_y, min_z: max_z]) - image[point]) / (neighborhood_size ** 3 - 1)
-
-inverted_average_fn = lambda point, image, neighborhood_size: image[point] - average_fn(point, image, neighborhood_size)
-
-def neighbourhood_voting_fn(point, image, neighborhood_size):
-  min_x, max_x, min_y, max_y, min_z, max_z = ranges(point, neighborhood_size, image.shape)
-  return np.count_nonzero(image[min_x: max_x, min_y: max_y, min_z: max_z] < image[point])
+neighbourhood_voting_fn = lambda window, nb_sz : np.count_nonzero(window < window[nb_sz // 2, nb_sz // 2, nb_sz // 2], axis=(1, 2, 3))
 
 """## CEHE Algorithm Implementation"""
 
+
 def cehe(image, metric, m, D):
-  temp_histogram = {}
   l, w, c = image.shape
   B = (l * w * c) / D
-  for k in range(c):
-    for i in range(l):
-      for j in range(w):
-        g = image[i, j, k]
-        λ = metric((i, j, k), image, m)
-        if not (g, λ) in temp_histogram:
-          temp_histogram[g, λ] = []
-        temp_histogram[g, λ].append((i, j, k))
 
-  keys = list(temp_histogram.keys())
-  keys.sort()
-  j = 0
-  histogram = [[]]
-  for g, λ in keys:
-    if B - len(histogram[j]) < len(temp_histogram[g, λ]) / 2:
-      histogram.append([])
-      j += 1
-    histogram[j] += temp_histogram[g, λ]
-  offset = D // (j + 1)
+  i, j, k = np.indices((l, w, c))
+  i, j, k = i.reshape((-1)), j.reshape((-1)), k.reshape(-1)
+  g = image[i, j, k]
+  padding = ((m // 2, m // 2), (m // 2, m // 2), (m // 2, m // 2))
+  padded_array = np.pad(image, padding, mode='constant', constant_values=0)
+  windows = sliding_window_view(padded_array, (m, m, m))
+  windows = windows.reshape((-1, m, m, m))
+
+  λ = metric(windows, m)
+  del windows
+
+  df = pd.DataFrame({'g': g, 'λ': λ.flatten(), 'i': i, 'j': j, 'k': k})
+  grouped_lists = df.groupby(['g', 'λ']).agg({
+    'i': list,
+    'j': list,
+    'k': list
+  }).reset_index()
+  list_i = grouped_lists['i'].tolist()
+  list_j = grouped_lists['j'].tolist()
+  list_k = grouped_lists['k'].tolist()
+
+  del df
+
+  index = 0
+  histogram_i, histogram_j, histogram_k = [[]], [[]], [[]]
+  for it in range(len(list_i)):
+    if B - len(histogram_i[index]) < len(list_i[it]) / 2:
+      histogram_i.append([]);
+      histogram_j.append([]);
+      histogram_k.append([])
+      index += 1
+    histogram_i[index] += list_i[it];
+    histogram_j[index] += list_j[it];
+    histogram_k[index] += list_k[it]
+
+  offset = D // (index + 1)
 
   enhanced_image = np.zeros(image.shape, dtype=image.dtype)
   g = 0
-  for points in histogram:
-    for point in points:
-      enhanced_image[point] = g
+  for it in range(len(histogram_i)):
+    enhanced_image[histogram_i[it], histogram_j[it], histogram_k[it]] = g
     g += offset
-
   return enhanced_image
 
 """## Image Normalization & Getting Image Density Map"""
@@ -78,13 +81,3 @@ normalize_img_arr = lambda image_arr: (image_arr - np.mean(image_arr)) / np.std(
 # Getting Density Map
 get_density_map = lambda enhanced_image, gamma: np.exp(gamma * normalize_img_arr(enhanced_image.get_fdata()))
 
-"""## Example on how to do CEHE on an MRI Scan then get density map:
-
-"""
-
-# mri_image = nib.load("/content/BraTS2021_00000_flair.nii.gz")
-# image_arr = mri_image.get_fdata()
-# enhanced_image_arr = CEHE(image_arr, neighbourhood_voting_fn, 3, 65536)
-# enhanced_image = nib.Nifti1Image(enhanced_image_arr, affine=np.eye(4))
-
-# density_map = get_density_map(enhanced_image, 1)
