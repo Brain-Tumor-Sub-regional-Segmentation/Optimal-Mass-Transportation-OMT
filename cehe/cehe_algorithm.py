@@ -18,7 +18,7 @@ from numpy.lib.stride_tricks import sliding_window_view
 
 average_fn = lambda window, nb_sz : np.sum(window - window[nb_sz // 2, nb_sz // 2, nb_sz // 2], axis=(1, 2, 3)) / (nb_sz ** 3 - 1)
 
-inverted_average_fn = lambda window, nb_sz: window[nb_sz // 2, nb_sz // 2, nb_sz // 2] - average_fn(window, nb_sz)
+inverted_average_fn = lambda window, nb_sz: window[:, nb_sz // 2, nb_sz // 2, nb_sz // 2] - average_fn(window, nb_sz)
 
 neighbourhood_voting_fn = lambda window, nb_sz : np.count_nonzero(window < window[nb_sz // 2, nb_sz // 2, nb_sz // 2], axis=(1, 2, 3))
 
